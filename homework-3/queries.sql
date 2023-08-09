@@ -14,14 +14,12 @@ where employees.city=customers.city and orders.ship_via='2';
 -- которые не сняты с продажи (поле discontinued) и которых меньше 25 и которые в категориях Dairy Products и Condiments.
 -- Отсортировать результат по возрастанию количества оставшегося товара.
 
-select product_name, units_in_stock, contact_name, phone
-from products
-inner join suppliers using(supplier_id)
-left join categories using(category_id)
-where discontinued <> 1 and category_id='2' or category_id='4'
-group by product_name, units_in_stock, contact_name, phone, category_id
-having units_in_stock <=25
-order by units_in_stock;
+SELECT product_name, units_in_stock, contact_name, phone
+FROM products
+JOIN categories USING(category_id)
+JOIN suppliers USING(supplier_id)
+WHERE category_name IN ('Dairy Products', 'Condiments') AND discontinued = 0 AND units_in_stock < 25
+ORDER BY units_in_stock;
 
 
 -- 3. Список компаний заказчиков (company_name из табл customers), не сделавших ни одного заказа
