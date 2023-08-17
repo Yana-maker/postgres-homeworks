@@ -1,6 +1,7 @@
 import json
 
 import psycopg2
+import sqlite3 as sq
 
 from config import config
 
@@ -13,7 +14,7 @@ def main():
     params = config()
     conn = None
 
-    create_database(params, db_name)
+    create_database(db_name, params)
     print(f"БД {db_name} успешно создана")
 
     params.update({'dbname': db_name})
@@ -40,28 +41,52 @@ def main():
             conn.close()
 
 
-def create_database(params, db_name) -> None:
+def create_database(database_name: str, params: dict) -> None:
     """Создает новую базу данных."""
-    pass
+    conn = psycopg2.connect(database='postgres', **params)
+    conn.autocommit = True
+    cur = conn.cursor()
+
+    cur.execute(f'DROP DATABASE {database_name}')
+    cur.execute(f'CREATE DATABASE {database_name}')
+
+
+    cur.close()
+    conn.close()
 
 def execute_sql_script(cur, script_file) -> None:
     """Выполняет скрипт из файла для заполнения БД данными."""
+
+    cur.execute(open(script_file, "r").read())
 
 
 
 def create_suppliers_table(cur) -> None:
     """Создает таблицу suppliers."""
-    pass
+    cur.execute('''CREATE TABLE if not exists suppliers(
+        supplier_id serial primary key,
+        company_name text NOT NULL,
+        contact_name text,
+        address text,
+        phone text,
+        fax text,
+        homepage text,
+        products text);'''
+
+    )
 
 
 def get_suppliers_data(json_file: str) -> list[dict]:
     """Извлекает данные о поставщиках из JSON-файла и возвращает список словарей с соответствующей информацией."""
-    pass
+    with open(json_file, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+        to_db = [(i['company_name'], i['contact'], i['address'], i['phone'], i['fax'], i['homepage'], i['products']) for i in data]
+        return to_db
 
 
 def insert_suppliers_data(cur, suppliers: list[dict]) -> None:
     """Добавляет данные из suppliers в таблицу suppliers."""
-    pass
+    cur.executemany('INSERT INTO suppliers(company_name, contact_name, address, phone, fax, homepage, products) VALUES (%s, %s, %s, %s, %s, %s, %s);', (suppliers))
 
 
 def add_foreign_keys(cur, json_file) -> None:
@@ -71,3 +96,4 @@ def add_foreign_keys(cur, json_file) -> None:
 
 if __name__ == '__main__':
     main()
+
